@@ -42,6 +42,9 @@ export default function GraphViewer({
   mode: GraphMode;
 }) {
   const [selected, setSelected] = useState<SelectedElement | null>(null);
+  const hasCounterfactualEdges = data.edges?.some((edge: any) =>
+    Number.isFinite(edge.data?.fidelity),
+  );
   const elements = useMemo(
     () => CytoscapeComponent.normalizeElements(data),
     [data],
@@ -77,10 +80,14 @@ export default function GraphViewer({
       {
         selector: 'edge',
         style: {
-          width: (ele: any) =>
-            mode === 'counterfactual'
-              ? Math.max(2, ele.data('fidelity') * 10)
-              : 2,
+          width: (ele: any) => {
+            const fidelity = ele.data('fidelity');
+            return mode === 'counterfactual' &&
+              typeof fidelity === 'number' &&
+              Number.isFinite(fidelity)
+              ? Math.max(2, fidelity * 10)
+              : 2;
+          },
           'line-color': (ele: any) =>
             getEdgeColor(ele.data('fidelity'), mode),
           'target-arrow-color': (ele: any) =>
@@ -151,7 +158,7 @@ export default function GraphViewer({
             <div className="h-3 w-3 rounded-full bg-[#8B7CC8]" />
             <span className="text-text-secondary">Protein / Gene</span>
           </div>
-          {mode === 'counterfactual' && (
+          {mode === 'counterfactual' && hasCounterfactualEdges && (
             <>
               <div className="my-1 border-t border-border" />
               <div className="flex items-center gap-2">

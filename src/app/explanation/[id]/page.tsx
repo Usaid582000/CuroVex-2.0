@@ -128,7 +128,7 @@ function ExplanationContent() {
               <span className="text-sm text-text-secondary">
                 Original Score:{' '}
                 <span className="font-semibold text-text-primary">
-                  {data.originalScore.toFixed(2)}
+                  {(data.originalScore * 100).toFixed(1)}%
                 </span>
               </span>
             </div>
@@ -251,7 +251,7 @@ function ExplanationContent() {
                         <div>
                           Masked:{' '}
                           <span className="text-text-primary">
-                            {edge.maskedScore.toFixed(2)}
+                            {(edge.maskedScore * 100).toFixed(1)}%
                           </span>
                         </div>
                         <div>

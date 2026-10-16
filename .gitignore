@@ -1,0 +1,77 @@
+# ==========================================
+# Node.js / Next.js
+# ==========================================
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js build outputs
+.next/
+out/
+build/
+dist/
+
+# Testing
+coverage/
+*.log
+
+# Local Environment Variables (NEVER commit these)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ==========================================
+# IDE & OS Files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Python (Included in case you add backend scripts later)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# ==========================================
+# CuroVex Specific (Prevent committing large local data)
+# ==========================================
+# If you later add the real KG pipeline, ignore raw data dumps
+kg-pipeline/data/raw/
+kg-pipeline/data/normalized/
+ml-core/artifacts/*.pt
+ml-core/artifacts/*.tar.gz
+*.sqlite
+*.sqlite3

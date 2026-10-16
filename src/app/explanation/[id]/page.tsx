@@ -10,10 +10,11 @@ import {
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
+import AuthGate from '@/components/AuthGate';
 import GraphViewer from '@/components/GraphViewer';
 import { explanationData, validationData } from '@/lib/data';
 
-export default function ExplanationPage() {
+function ExplanationContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -289,5 +290,13 @@ export default function ExplanationPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ExplanationPage() {
+  return (
+    <AuthGate>
+      <ExplanationContent />
+    </AuthGate>
   );
 }

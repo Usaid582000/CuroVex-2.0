@@ -12,6 +12,14 @@ where the research dataset contains them. Computational scores and symptom
 similarity are hypotheses for further investigation, not evidence of clinical
 efficacy or medical advice.
 
+## Account interface
+
+The sign-in, sign-up, and settings screens are interface previews only. There
+is no authentication server, institutional access control, or account recovery.
+Passwords are not saved or verified; only a local profile is stored in the
+browser. Do not enter real credentials, protected health information, or
+confidential research data.
+
 ## Installation & Startup
 
 1. Ensure Node.js 18 or later is installed.

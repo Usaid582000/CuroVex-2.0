@@ -1,1 +1,31 @@
-@tailwind base; @tailwind components; @tailwind utilities; @layer base { body { @apply bg-background text-text-primary; } }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-background text-ink antialiased;
+  font-feature-settings:
+    'ss01' on,
+    'cv11' on;
+}
+
+::selection {
+  color: #ffffff;
+  background: #176b57;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

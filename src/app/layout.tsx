@@ -1,1 +1,34 @@
-import type { Metadata } from 'next'; import { Inter } from 'next/font/google'; import './globals.css'; const inter = Inter({ subsets: ['latin'] }); export const metadata: Metadata = { title: 'CuroVex | Explainable AI for Drug Repurposing', description: 'Explainable AI for drug repurposing.', manifest: '/manifest.json', themeColor: '#0F766E' }; export default function RootLayout({ children }: { children: React.ReactNode }) { return (<html lang="en"><head><link rel="icon" href="/icon.svg" type="image/svg+xml" /><link rel="apple-touch-icon" href="/icon.png" /></head><body className={`${inter.className} bg-background text-text-primary antialiased`}>{children}</body></html>); }
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+
+const inter = Inter({ subsets: ['latin'] });
+
+export const metadata: Metadata = {
+  title: 'CuroVex | Biomedical Research Workspace',
+  description:
+    'An explainable research workspace for exploring biomedical networks and therapeutic hypotheses.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    apple: '/icon.png',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#F4F7F4',
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en">
+      <body className={`${inter.className} bg-background text-ink antialiased`}>
+        {children}
+      </body>
+    </html>
+  );
+}

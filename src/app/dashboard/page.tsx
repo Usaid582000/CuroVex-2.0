@@ -44,6 +44,10 @@ import {
   predictions,
   type Disease,
 } from '@/lib/data';
+import {
+  parseCandidateCsv,
+  type CandidateRecord,
+} from '@/lib/candidate-data';
 
 type SearchMode = 'disease' | 'symptoms';
 
@@ -60,6 +64,11 @@ function DashboardWorkspace() {
   const [selectedDisease, setSelectedDisease] = useState<string | null>(null);
   const [loadingResults, setLoadingResults] = useState(true);
   const [profile, setProfile] = useState<PreviewProfile | null>(null);
+  const [candidateRecords, setCandidateRecords] = useState<CandidateRecord[]>(
+    [],
+  );
+  const [candidateLoadError, setCandidateLoadError] = useState('');
+  const [candidatesLoading, setCandidatesLoading] = useState(true);
 
   const filteredDiseases = useMemo<
     { disease: Disease; matchingSymptoms: string[] }[]
@@ -102,9 +111,43 @@ function DashboardWorkspace() {
   const selectedCondition = diseases.find(
     (disease) => disease.id === selectedDisease,
   );
-  const currentPredictions = selectedDisease
-    ? predictions[selectedDisease] || []
-    : [];
+  const currentPredictions = useMemo(() => {
+    if (!selectedDisease) return [];
+
+    const seedCandidates = candidateRecords
+      .filter((candidate) => candidate.conditionId === selectedDisease)
+      .map((candidate) => ({
+        rank: candidate.rank,
+        drugId: candidate.drugId,
+        explanationRoute: `${candidate.drugId}_${candidate.conditionId}`,
+        drugName: candidate.drugName,
+        score: candidate.evidenceCoverageScore,
+        description: candidate.rationale,
+        evidence: candidate.evidenceType,
+        scoreLabel: 'Evidence coverage',
+        scoreMethod: candidate.scoreMethod,
+        sourceName: candidate.sourceName,
+        sourceUrl: candidate.sourceUrl,
+        sourceNote: candidate.sourceNote,
+      }));
+    const seedDrugNames = new Set(
+      seedCandidates.map((candidate) => candidate.drugName.toLowerCase()),
+    );
+    const existingCandidates = (predictions[selectedDisease] || [])
+      .filter(
+        (candidate) =>
+          !seedDrugNames.has(candidate.drugName.toLowerCase()),
+      )
+      .map((candidate) => ({
+        ...candidate,
+        scoreLabel: 'Research score',
+        explanationRoute: `${candidate.drugId}_${selectedDisease}`,
+      }));
+
+    return [...seedCandidates, ...existingCandidates].sort(
+      (first, second) => first.rank - second.rank,
+    );
+  }, [candidateRecords, selectedDisease]);
 
   useEffect(() => {
     setLoadingResults(true);
@@ -115,6 +158,37 @@ function DashboardWorkspace() {
   useEffect(() => {
     const timer = window.setTimeout(() => setProfile(readPreviewProfile()), 250);
     return () => window.clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCandidateRecords() {
+      try {
+        const response = await fetch('/curovex_seed_candidates.csv', {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(
+            `Candidate records could not be loaded (HTTP ${response.status}).`,
+          );
+        }
+
+        setCandidateRecords(parseCandidateCsv(await response.text()));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setCandidateLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Candidate records could not be loaded.',
+        );
+      } finally {
+        if (!controller.signal.aborted) setCandidatesLoading(false);
+      }
+    }
+
+    void loadCandidateRecords();
+    return () => controller.abort();
   }, []);
 
   function addSymptoms(event: FormEvent<HTMLFormElement>) {
@@ -348,11 +422,25 @@ function DashboardWorkspace() {
               },
               {
                 label: 'Candidate records',
-                value: Object.values(predictions)
-                  .reduce((total, items) => total + items.length, 0)
+                value: (
+                  candidateRecords.length +
+                  Object.values(predictions)
+                    .flat()
+                    .filter(
+                      (candidate) =>
+                        !candidateRecords.some(
+                          (record) =>
+                            record.drugName.toLowerCase() ===
+                              candidate.drugName.toLowerCase() &&
+                            record.conditionId === 'MONDO:0004975',
+                        ),
+                    ).length
+                )
                   .toString()
                   .padStart(2, '0'),
-                detail: 'Available in this workspace',
+                detail: candidatesLoading
+                  ? 'Loading research records'
+                  : 'Available in this workspace',
                 icon: FlaskConical,
                 tone: 'bg-accent/10 text-accent',
               },
@@ -586,7 +674,7 @@ function DashboardWorkspace() {
                     currentPredictions.map((candidate: any) => (
                       <Link
                         key={candidate.drugId}
-                        href={`/explanation/${candidate.drugId}_${selectedDisease}`}
+                        href={`/explanation/${encodeURIComponent(candidate.explanationRoute)}`}
                         className="group block rounded-xl border border-border bg-white p-4 transition hover:border-primary/30 hover:shadow-soft"
                       >
                         <div className="flex items-center justify-between gap-3">
@@ -603,12 +691,49 @@ function DashboardWorkspace() {
                               {candidate.score.toFixed(2)}
                             </p>
                             <p className="text-[10px] text-secondary">
-                              Research score
+                              {candidate.scoreLabel}
                             </p>
                           </div>
                         </div>
+                        {(candidate.scoreMethod || candidate.sourceName) && (
+                          <div className="mt-3 border-t border-border/70 pt-3 text-[11px] leading-5 text-secondary">
+                            {candidate.scoreMethod && (
+                              <p>
+                                Score method:{' '}
+                                <span className="font-medium text-ink">
+                                  {candidate.scoreMethod}
+                                </span>
+                              </p>
+                            )}
+                            {candidate.sourceUrl && (
+                              <p className="mt-1">
+                                Evidence:{' '}
+                                <span className="font-medium text-primary">
+                                  {candidate.sourceName}
+                                </span>
+                              </p>
+                            )}
+                            {candidate.sourceNote && (
+                              <p className="mt-1 text-secondary/80">
+                                {candidate.sourceNote}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </Link>
                     ))
+                  ) : candidatesLoading ? (
+                    <div
+                      className="h-24 animate-shimmer rounded-xl border border-border bg-gradient-to-r from-background via-surface-secondary to-background bg-[length:200%_100%]"
+                      aria-label="Loading ranked candidates"
+                    />
+                  ) : candidateLoadError ? (
+                    <div
+                      role="alert"
+                      className="rounded-xl border border-error/20 bg-red-50 p-4 text-sm text-error"
+                    >
+                      {candidateLoadError}
+                    </div>
                   ) : (
                     <div className="rounded-xl border border-dashed border-border p-4">
                       <p className="text-sm font-semibold text-ink">

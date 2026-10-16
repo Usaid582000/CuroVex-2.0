@@ -18,7 +18,7 @@ export const diseases: Disease[] = [
     ],
   },
   {
-    id: 'parkinsons-disease',
+    id: 'MONDO:0005180',
     name: "Parkinson's Disease",
     category: 'Neurodegenerative',
     symptoms: ['tremor', 'muscle stiffness', 'slow movement', 'balance problems'],
@@ -42,7 +42,7 @@ export const diseases: Disease[] = [
     symptoms: ['shortness of breath', 'wheezing', 'chest tightness', 'cough'],
   },
   {
-    id: 'type-2-diabetes',
+    id: 'MONDO:0005148',
     name: 'Type 2 Diabetes',
     category: 'Metabolic',
     symptoms: [
@@ -57,6 +57,12 @@ export const diseases: Disease[] = [
     name: 'Rheumatoid Arthritis',
     category: 'Autoimmune',
     symptoms: ['joint pain', 'joint stiffness', 'joint swelling', 'fatigue'],
+  },
+  {
+    id: 'MONDO:0005339',
+    name: 'Androgenetic Alopecia',
+    category: 'Dermatological',
+    symptoms: ['pattern hair loss', 'hair thinning', 'receding hairline'],
   },
   {
     id: 'endometriosis',
@@ -107,7 +113,7 @@ export const explanationData: Record<string, any> = {
       paths: [
         {
           pattern:
-            'Drug → TARGETS → Protein → INTERACTS_WITH → Protein → ASSOCIATED_WITH → Disease',
+            'Drug → TARGETS → Protein → INTERACT_WITH → Gene → ASSOCIATED_WITH → Disease',
           count: 1,
         },
       ],
@@ -115,7 +121,7 @@ export const explanationData: Record<string, any> = {
         nodes: [
           { data: { id: 'n1', label: 'Aspirin', type: 'drug' } },
           { data: { id: 'n2', label: 'PTGS2', type: 'protein' } },
-          { data: { id: 'n3', label: 'APP', type: 'protein' } },
+          { data: { id: 'n3', label: 'APP', type: 'gene' } },
           {
             data: {
               id: 'n4',
@@ -138,7 +144,7 @@ export const explanationData: Record<string, any> = {
               id: 'e2',
               source: 'n2',
               target: 'n3',
-              label: 'INTERACTS_WITH',
+              label: 'INTERACT_WITH',
             },
           },
           {
@@ -187,7 +193,7 @@ export const explanationData: Record<string, any> = {
         nodes: [
           { data: { id: 'n1', label: 'Aspirin', type: 'drug' } },
           { data: { id: 'n2', label: 'PTGS2', type: 'protein' } },
-          { data: { id: 'n3', label: 'APP', type: 'protein' } },
+          { data: { id: 'n3', label: 'APP', type: 'gene' } },
           {
             data: {
               id: 'n4',
@@ -211,7 +217,7 @@ export const explanationData: Record<string, any> = {
               id: 'e2',
               source: 'n2',
               target: 'n3',
-              label: 'INTERACTS_WITH',
+              label: 'INTERACT_WITH',
               fidelity: 0.4,
             },
           },

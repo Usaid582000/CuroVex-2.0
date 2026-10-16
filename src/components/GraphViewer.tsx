@@ -99,6 +99,14 @@ export default function GraphViewer({
           'text-background-padding': '2px',
         },
       },
+      {
+        selector: 'edge.illustrative',
+        style: {
+          'line-style': 'dashed',
+          'line-color': '#A66A20',
+          'target-arrow-color': '#A66A20',
+        },
+      },
     ],
     [mode],
   );

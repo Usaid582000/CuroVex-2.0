@@ -9,22 +9,103 @@ import {
   GitBranch,
 } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AuthGate from '@/components/AuthGate';
+import CandidatePathTemplate from '@/components/CandidatePathTemplate';
 import GraphViewer from '@/components/GraphViewer';
-import { explanationData, validationData } from '@/lib/data';
+import {
+  explanationData,
+  validationData,
+} from '@/lib/data';
+import {
+  findCandidateForRoute,
+  parseCandidateCsv,
+  type CandidateRecord,
+} from '@/lib/candidate-data';
 
 function ExplanationContent() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const data =
-    explanationData[id as keyof typeof explanationData] ||
-    explanationData['drug_aspirin_MONDO:0004975'];
+  const [candidateRecords, setCandidateRecords] = useState<CandidateRecord[]>(
+    [],
+  );
+  const [candidatesLoading, setCandidatesLoading] = useState(true);
+  const [candidateLoadError, setCandidateLoadError] = useState('');
+  const existingData = explanationData[id as keyof typeof explanationData];
+  const seedCandidate = findCandidateForRoute(candidateRecords, id);
   const validation =
     validationData[id as keyof typeof validationData] ||
     validationData['drug_aspirin_MONDO:0004975'];
   const [mode, setMode] = useState<'path' | 'counterfactual'>('counterfactual');
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCandidateRecords() {
+      try {
+        const response = await fetch('/curovex_seed_candidates.csv', {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(
+            `Candidate records could not be loaded (HTTP ${response.status}).`,
+          );
+        }
+
+        setCandidateRecords(parseCandidateCsv(await response.text()));
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setCandidateLoadError(
+          error instanceof Error
+            ? error.message
+            : 'Candidate records could not be loaded.',
+        );
+      } finally {
+        if (!controller.signal.aborted) setCandidatesLoading(false);
+      }
+    }
+
+    void loadCandidateRecords();
+    return () => controller.abort();
+  }, []);
+
+  if (!existingData && candidatesLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+      </main>
+    );
+  }
+
+  if (!existingData && seedCandidate) {
+    return <CandidatePathTemplate candidate={seedCandidate} />;
+  }
+
+  if (!existingData) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="max-w-lg rounded-2xl border border-border bg-white p-7 shadow-soft">
+          <AlertCircle className="h-7 w-7 text-accent" />
+          <h1 className="mt-4 text-xl font-semibold text-ink">
+            Candidate explanation not found
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-secondary">
+            {candidateLoadError ||
+              'This route does not match a stored candidate or graph explanation.'}
+          </p>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="mt-5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary-dark"
+          >
+            Back to workspace
+          </button>
+        </div>
+      </main>
+    );
+  }
+
+  const data = existingData;
 
   return (
     <div className="min-h-screen bg-background p-6">

@@ -1,1 +1,293 @@
-'use client'; import { useParams, useRouter } from 'next/navigation'; import { useState } from 'react'; import { ArrowLeft, FlaskConical, GitBranch, Activity, ExternalLink, AlertCircle } from 'lucide-react'; import GraphViewer from '@/components/GraphViewer'; import { explanationData, validationData } from '@/lib/data'; export default function ExplanationPage() { const params = useParams(); const router = useRouter(); const id = params.id as string; const data = explanationData[id as keyof typeof explanationData] || explanationData['drug_aspirin_MONDO:0004975']; const validation = validationData[id as keyof typeof validationData] || validationData['drug_aspirin_MONDO:0004975']; const [mode, setMode] = useState<'path' | 'counterfactual'>('counterfactual'); return (<div className="min-h-screen bg-background p-6"><div className="max-w-7xl mx-auto space-y-6"><div className="flex items-center gap-4"><button onClick={() => router.back()} className="p-2 rounded-lg hover:bg-surface-secondary text-text-secondary transition-colors"><ArrowLeft className="w-5 h-5" /></button><div><h1 className="text-2xl font-bold text-text-primary">Explanation: {data.drugName} → {data.diseaseName}</h1><div className="flex items-center gap-2 mt-1"><span className="px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">Precomputed Demo Result</span><span className="text-text-secondary text-sm">Original Score: <span className="font-semibold text-text-primary">{data.originalScore.toFixed(2)}</span></span></div></div></div><div className="flex gap-2 p-1 bg-surface-secondary rounded-lg w-fit"><button onClick={() => setMode('path')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'path' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}><GitBranch className="w-4 h-4" /> Path-Based</button><button onClick={() => setMode('counterfactual')} className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${mode === 'counterfactual' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'}`}><Activity className="w-4 h-4" /> Counterfactual</button></div><div className="grid grid-cols-1 lg:grid-cols-3 gap-6"><div className="lg:col-span-2 space-y-6"><GraphViewer data={mode === 'path' ? data.pathBased.graph : data.counterfactual.graph} mode={mode} /><div className="bg-surface rounded-card border border-border p-5 shadow-card"><h3 className="font-semibold text-text-primary mb-4 flex items-center gap-2"><FlaskConical className="w-4 h-4 text-accent" /> Method Comparison</h3><div className="grid grid-cols-2 gap-4"><div className="p-4 rounded-lg bg-surface-secondary border border-border"><p className="text-xs text-text-secondary uppercase tracking-wider mb-1">Path-Based</p><p className="text-sm text-text-primary">Identifies biologically plausible meta-paths. Does not prove model reliance.</p><div className="mt-3 text-sm"><span className="text-text-secondary">Paths Found:</span> <span className="font-medium text-text-primary">{data.pathBased.paths.length}</span></div></div><div className="p-4 rounded-lg bg-surface border border-primary/20 ring-1 ring-primary/10"><p className="text-xs text-primary uppercase tracking-wider mb-1 font-medium">Counterfactual (Novel)</p><p className="text-sm text-text-primary">Measures actual model reliance by masking edges and observing score drop.</p><div className="mt-3 flex gap-4 text-sm"><div><span className="text-text-secondary">Fidelity:</span> <span className="font-medium text-primary">{(data.counterfactual.metrics.overallFidelity * 100).toFixed(1)}%</span></div><div><span className="text-text-secondary">Sparsity:</span> <span className="font-medium text-primary">{(data.counterfactual.metrics.sparsity * 100).toFixed(1)}%</span></div></div></div></div></div></div><div className="space-y-6">{mode === 'counterfactual' && (<div className="bg-surface rounded-card border border-border p-5 shadow-card"><h3 className="font-semibold text-text-primary mb-3 text-sm">Edge Impact Analysis</h3><div className="space-y-3">{data.counterfactual.edgeImpacts.map((edge: any) => (<div key={edge.edgeId} className="p-3 rounded-lg bg-surface-secondary border border-border"><div className="flex justify-between items-start mb-1"><span className="text-sm font-medium text-text-primary">{edge.source} → {edge.target}</span><span className={`text-xs px-2 py-0.5 rounded-full ${edge.impact === 'high' ? 'bg-error/10 text-error' : edge.impact === 'medium' ? 'bg-warning/10 text-warning' : 'bg-border text-text-secondary'}`}>{edge.impact.toUpperCase()}</span></div><div className="grid grid-cols-2 gap-2 text-xs text-text-secondary mt-2"><div>Masked: <span className="text-text-primary">{edge.maskedScore.toFixed(2)}</span></div><div>Fidelity: <span className="text-primary font-medium">{(edge.fidelity * 100).toFixed(1)}%</span></div></div></div>))}</div></div>)}{mode === 'path' && (<div className="bg-surface rounded-card border border-border p-5 shadow-card"><h3 className="font-semibold text-text-primary mb-3 text-sm">Identified Meta-Paths</h3><div className="space-y-3">{data.pathBased.paths.map((path: any, idx: number) => (<div key={idx} className="p-3 rounded-lg bg-surface-secondary border border-border"><p className="text-xs font-mono text-text-primary mb-1">{path.pattern}</p><p className="text-xs text-text-secondary">Support count: {path.count}</p></div>))}</div></div>)}<div className="bg-surface rounded-card border border-border p-5 shadow-card"><h3 className="font-semibold text-text-primary mb-4 text-sm flex items-center gap-2"><ExternalLink className="w-4 h-4 text-secondary" /> External Validation</h3><div className="space-y-4"><div><div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold text-text-secondary uppercase">ClinicalTrials.gov</span><span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">{validation.clinicalTrials.count} found</span></div>{validation.clinicalTrials.trials.map((trial: any) => (<a key={trial.id} href={trial.url} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-surface-secondary border border-border hover:border-primary/30 transition-colors group"><p className="text-sm font-medium text-text-primary group-hover:text-primary transition-colors">{trial.title}</p><div className="flex gap-2 mt-2 text-xs text-text-secondary"><span className="bg-surface px-1.5 py-0.5 rounded border border-border">{trial.id}</span><span>{trial.phase}</span><span>•</span><span>{trial.status}</span></div></a>))}</div><div className="border-t border-border pt-4"><div className="flex items-center justify-between mb-2"><span className="text-xs font-semibold text-text-secondary uppercase">PubMed</span><span className="text-xs bg-success/10 text-success px-2 py-0.5 rounded-full">{validation.pubmed.count} found</span></div>{validation.pubmed.articles.map((article: any) => (<a key={article.pmid} href={article.url} target="_blank" rel="noopener noreferrer" className="block p-3 rounded-lg bg-surface-secondary border border-border hover:border-primary/30 transition-colors group"><p className="text-sm font-medium text-text-primary group-hover:text-primary transition-colors">{article.title}</p><p className="text-xs text-text-secondary mt-1">{article.authors} • {article.date}</p><p className="text-xs text-primary mt-1">PMID: {article.pmid}</p></a>))}</div></div><div className="mt-4 p-3 rounded-lg bg-accent/5 border border-accent/20 flex gap-2"><AlertCircle className="w-4 h-4 text-accent flex-shrink-0 mt-0.5" /><p className="text-xs text-text-secondary">Presence of trials or literature does not guarantee clinical efficacy. This is a computational hypothesis requiring further validation.</p></div></div></div></div></div>); }
+'use client';
+
+import {
+  Activity,
+  AlertCircle,
+  ArrowLeft,
+  ExternalLink,
+  FlaskConical,
+  GitBranch,
+} from 'lucide-react';
+import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
+import GraphViewer from '@/components/GraphViewer';
+import { explanationData, validationData } from '@/lib/data';
+
+export default function ExplanationPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
+  const data =
+    explanationData[id as keyof typeof explanationData] ||
+    explanationData['drug_aspirin_MONDO:0004975'];
+  const validation =
+    validationData[id as keyof typeof validationData] ||
+    validationData['drug_aspirin_MONDO:0004975'];
+  const [mode, setMode] = useState<'path' | 'counterfactual'>('counterfactual');
+
+  return (
+    <div className="min-h-screen bg-background p-6">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="rounded-lg p-2 text-text-secondary transition-colors hover:bg-surface-secondary"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">
+              Explanation: {data.drugName} → {data.diseaseName}
+            </h1>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent">
+                Research dataset analysis
+              </span>
+              <span className="text-sm text-text-secondary">
+                Original Score:{' '}
+                <span className="font-semibold text-text-primary">
+                  {data.originalScore.toFixed(2)}
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex w-fit gap-2 rounded-lg bg-surface-secondary p-1">
+          <button
+            onClick={() => setMode('path')}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              mode === 'path'
+                ? 'bg-surface text-primary shadow-sm'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <GitBranch className="h-4 w-4" />
+            Path-Based
+          </button>
+          <button
+            onClick={() => setMode('counterfactual')}
+            className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-all ${
+              mode === 'counterfactual'
+                ? 'bg-surface text-primary shadow-sm'
+                : 'text-text-secondary hover:text-text-primary'
+            }`}
+          >
+            <Activity className="h-4 w-4" />
+            Counterfactual
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <GraphViewer
+              data={
+                mode === 'path'
+                  ? data.pathBased.graph
+                  : data.counterfactual.graph
+              }
+              mode={mode}
+            />
+
+            <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+              <h3 className="mb-4 flex items-center gap-2 font-semibold text-text-primary">
+                <FlaskConical className="h-4 w-4 text-accent" />
+                Method Comparison
+              </h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border border-border bg-surface-secondary p-4">
+                  <p className="mb-1 text-xs uppercase tracking-wider text-text-secondary">
+                    Path-Based
+                  </p>
+                  <p className="text-sm text-text-primary">
+                    Identifies biologically plausible meta-paths. Does not prove
+                    model reliance.
+                  </p>
+                  <div className="mt-3 text-sm">
+                    <span className="text-text-secondary">Paths Found:</span>{' '}
+                    <span className="font-medium text-text-primary">
+                      {data.pathBased.paths.length}
+                    </span>
+                  </div>
+                </div>
+                <div className="rounded-lg border border-primary/20 bg-surface p-4 ring-1 ring-primary/10">
+                  <p className="mb-1 text-xs font-medium uppercase tracking-wider text-primary">
+                    Counterfactual (Novel)
+                  </p>
+                  <p className="text-sm text-text-primary">
+                    Measures actual model reliance by masking edges and
+                    observing score drop.
+                  </p>
+                  <div className="mt-3 flex gap-4 text-sm">
+                    <div>
+                      <span className="text-text-secondary">Fidelity:</span>{' '}
+                      <span className="font-medium text-primary">
+                        {(data.counterfactual.metrics.overallFidelity * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-text-secondary">Sparsity:</span>{' '}
+                      <span className="font-medium text-primary">
+                        {(data.counterfactual.metrics.sparsity * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {mode === 'counterfactual' && (
+              <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+                <h3 className="mb-3 text-sm font-semibold text-text-primary">
+                  Edge Impact Analysis
+                </h3>
+                <div className="space-y-3">
+                  {data.counterfactual.edgeImpacts.map((edge: any) => (
+                    <div
+                      key={edge.edgeId}
+                      className="rounded-lg border border-border bg-surface-secondary p-3"
+                    >
+                      <div className="mb-1 flex items-start justify-between">
+                        <span className="text-sm font-medium text-text-primary">
+                          {edge.source} → {edge.target}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs ${
+                            edge.impact === 'high'
+                              ? 'bg-error/10 text-error'
+                              : edge.impact === 'medium'
+                                ? 'bg-warning/10 text-warning'
+                                : 'bg-border text-text-secondary'
+                          }`}
+                        >
+                          {edge.impact.toUpperCase()}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-text-secondary">
+                        <div>
+                          Masked:{' '}
+                          <span className="text-text-primary">
+                            {edge.maskedScore.toFixed(2)}
+                          </span>
+                        </div>
+                        <div>
+                          Fidelity:{' '}
+                          <span className="font-medium text-primary">
+                            {(edge.fidelity * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {mode === 'path' && (
+              <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+                <h3 className="mb-3 text-sm font-semibold text-text-primary">
+                  Identified Meta-Paths
+                </h3>
+                <div className="space-y-3">
+                  {data.pathBased.paths.map((path: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="rounded-lg border border-border bg-surface-secondary p-3"
+                    >
+                      <p className="mb-1 font-mono text-xs text-text-primary">
+                        {path.pattern}
+                      </p>
+                      <p className="text-xs text-text-secondary">
+                        Support count: {path.count}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="rounded-card border border-border bg-surface p-5 shadow-card">
+              <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-text-primary">
+                <ExternalLink className="h-4 w-4 text-secondary" />
+                External Validation
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase text-text-secondary">
+                      ClinicalTrials.gov
+                    </span>
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
+                      {validation.clinicalTrials.count} found
+                    </span>
+                  </div>
+                  {validation.clinicalTrials.trials.map((trial: any) => (
+                    <a
+                      key={trial.id}
+                      href={trial.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group mb-2 block rounded-lg border border-border bg-surface-secondary p-3 transition-colors hover:border-primary/30"
+                    >
+                      <p className="text-sm font-medium text-text-primary transition-colors group-hover:text-primary">
+                        {trial.title}
+                      </p>
+                      <div className="mt-2 flex gap-2 text-xs text-text-secondary">
+                        <span className="rounded border border-border bg-surface px-1.5 py-0.5">
+                          {trial.id}
+                        </span>
+                        <span>{trial.phase}</span>
+                        <span>•</span>
+                        <span>{trial.status}</span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase text-text-secondary">
+                      PubMed
+                    </span>
+                    <span className="rounded-full bg-success/10 px-2 py-0.5 text-xs text-success">
+                      {validation.pubmed.count} found
+                    </span>
+                  </div>
+                  {validation.pubmed.articles.map((article: any) => (
+                    <a
+                      key={article.pmid}
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group mb-2 block rounded-lg border border-border bg-surface-secondary p-3 transition-colors hover:border-primary/30"
+                    >
+                      <p className="text-sm font-medium text-text-primary transition-colors group-hover:text-primary">
+                        {article.title}
+                      </p>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        {article.authors} • {article.date}
+                      </p>
+                      <p className="mt-1 text-xs text-primary">
+                        PMID: {article.pmid}
+                      </p>
+                    </a>
+                  ))}
+                </div>
+              </div>
+              <div className="mt-4 flex gap-2 rounded-lg border border-accent/20 bg-accent/5 p-3">
+                <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+                <p className="text-xs text-text-secondary">
+                  Presence of trials or literature does not guarantee clinical
+                  efficacy. This is a computational hypothesis requiring
+                  further validation.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,11 +1,22 @@
-# CuroVex Examiner Demo Guide
+# CuroVex Research Guide
 
-## Recommended Presentation Sequence (5-7 Minutes)
-1. **Landing Page**: Open `http://localhost:3000`. Point out the "Demonstration Mode Active" badge.
-2. **Dashboard & Search**: Click "Launch Dashboard". Type "Alzheimer" in the search bar. Highlight "Aspirin" as a Repurposing Candidate (Score: 0.75).
-3. **Explanation Deep Dive**: Click on "Aspirin". Toggle between **Path-Based** (baseline meta-paths) and **Counterfactual** (novel contribution). Point to the Edge Impact Table showing how masking the `PTGS2 → APP` edge drops the score (Fidelity: 40%).
-4. **External Validation**: Show the ClinicalTrials.gov and PubMed cards. Emphasize the disclaimer about computational hypotheses.
+## Suggested Presentation
 
-## Anticipated Questions
-- **Q: Is this running live Neo4j queries?** A: No. The demo uses precomputed JSON subgraphs derived from the actual pipeline's output format to guarantee reliability on a student laptop.
-- **Q: How is Fidelity calculated?** A: Fidelity = (Original Score - Masked Score) / |Original Score|.
+1. **Condition search:** Search for a condition or browse the research catalog.
+2. **Symptom exploration:** Enter one or more symptoms to find catalog
+   conditions with overlapping symptom associations. Results are ordered by the
+   number of shared symptoms.
+3. **Candidate review:** Alzheimer's disease currently has ranked treatment
+   candidates. Other indexed conditions may not yet have candidate data.
+4. **Explanation:** Where available, inspect the graph, path-based view,
+   counterfactual edge impacts, and linked external evidence.
+
+## Interpretation
+
+Symptom overlap can help researchers explore connections involving a newly
+observed condition. It cannot identify an unknown disease, confirm a diagnosis,
+or show that conditions share a cause. Computational scores and graph
+relationships are research hypotheses and do not establish clinical efficacy.
+
+The current local research dataset contains precomputed examples; candidate
+coverage is limited to the records shown in the application.

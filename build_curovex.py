@@ -20,6 +20,15 @@ files = {
     "EXAMINER_GUIDE.md": """# CuroVex Examiner Demo Guide\n\n## Recommended Presentation Sequence (5-7 Minutes)\n1. **Landing Page**: Open `http://localhost:3000`. Point out the "Demonstration Mode Active" badge.\n2. **Dashboard & Search**: Click "Launch Dashboard". Type "Alzheimer" in the search bar. Highlight "Aspirin" as a Repurposing Candidate (Score: 0.75).\n3. **Explanation Deep Dive**: Click on "Aspirin". Toggle between **Path-Based** (baseline meta-paths) and **Counterfactual** (novel contribution). Point to the Edge Impact Table showing how masking the `PTGS2 → APP` edge drops the score (Fidelity: 40%).\n4. **External Validation**: Show the ClinicalTrials.gov and PubMed cards. Emphasize the disclaimer about computational hypotheses.\n\n## Anticipated Questions\n- **Q: Is this running live Neo4j queries?** A: No. The demo uses precomputed JSON subgraphs derived from the actual pipeline's output format to guarantee reliability on a student laptop.\n- **Q: How is Fidelity calculated?** A: Fidelity = (Original Score - Masked Score) / |Original Score|.\n"""
 }
 
+for path in ("src/app/page.tsx", "src/app/dashboard/page.tsx"):
+    files[path] = files[path].replace(
+        "import Link from 'next/link';",
+        "import Image from 'next/image'; import Link from 'next/link';",
+    ).replace(
+        '<div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold text-sm">CV</div>',
+        '<Image src="/icon.svg" alt="CuroVex logo" width={32} height={32} className="rounded-lg" />',
+    )
+
 with zipfile.ZipFile("curovex-demo.zip", "w", zipfile.ZIP_DEFLATED) as zf:
     for path, content in files.items():
         zf.writestr(path, content)
